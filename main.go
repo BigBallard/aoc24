@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type LocationId int
+type LocationId = uint
 
 var data embed.FS
 
@@ -16,7 +16,9 @@ func main() {
 	locationList1, locationList2 := loadLocationLists()
 
 	listDifference := reconcileLists(locationList1, locationList2)
-	fmt.Printf("Total distance of location lists is %d", listDifference)
+	fmt.Printf("Total distance of location lists is %d\n", listDifference)
+	similarityScore := calculateSimilarityScore(locationList1, locationList2)
+	fmt.Printf("Similarity score is %d\n", similarityScore)
 }
 
 func loadLocationLists() ([]LocationId, []LocationId) {
@@ -48,4 +50,23 @@ func reconcileLists(list1 []LocationId, list2 []LocationId) uint {
 		}
 	}
 	return totalDiffs
+}
+
+func calculateSimilarityScore(list1 []LocationId, list2 []LocationId) uint {
+	freqMap := make(map[LocationId]uint)
+	for _, value := range list2 {
+		if count, ok := freqMap[value]; ok {
+			count++
+			freqMap[value] = count
+		} else {
+			freqMap[value] = 1
+		}
+	}
+	simScore := uint(0)
+	for _, value := range list1 {
+		if count, ok := freqMap[value]; ok {
+			simScore += value * count
+		}
+	}
+	return simScore
 }
