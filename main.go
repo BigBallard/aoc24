@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"fmt"
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -19,6 +20,10 @@ func main() {
 	fmt.Printf("Total distance of location lists is %d\n", listDifference)
 	similarityScore := calculateSimilarityScore(locationList1, locationList2)
 	fmt.Printf("Similarity score is %d\n", similarityScore)
+
+	reports := loadReports()
+	safeReports := filterSafeReports(reports)
+	fmt.Printf("Total safe reports %d\n", safeReports)
 }
 
 func loadLocationLists() ([]LocationId, []LocationId) {
@@ -69,4 +74,57 @@ func calculateSimilarityScore(list1 []LocationId, list2 []LocationId) uint {
 		}
 	}
 	return simScore
+}
+
+func loadReports() []string {
+	reports, rErr := readLines("./data/report_input.txt")
+	if rErr != nil {
+		panic(rErr)
+	}
+	return reports
+}
+
+type LevelDirection = int
+
+var (
+	LevelDirectionUnset      LevelDirection = 2
+	LevelDirectionIncreasing                = 1
+	LevelDirectionDecreasing                = 0
+)
+
+func filterSafeReports(reports []string) int {
+	safeCount := 0
+	for _, report := range reports {
+		direction := LevelDirectionUnset
+		safe := true
+		levels := strings.Split(report, " ")
+		for i := 0; i < len(levels)-1; i++ {
+			curr, _ := strconv.Atoi(levels[i])
+			next, _ := strconv.Atoi(levels[i+1])
+			diff := curr - next
+			absDiff := math.Abs(float64(diff))
+			if absDiff < 1 || absDiff > 3 {
+				safe = false
+				break
+			}
+			var diffDirection LevelDirection
+			if diff > 0 {
+				diffDirection = LevelDirectionIncreasing
+			} else {
+				diffDirection = LevelDirectionDecreasing
+			}
+			if direction != LevelDirectionUnset {
+				if diffDirection != direction {
+					safe = false
+					break
+				}
+			} else {
+				direction = diffDirection
+			}
+		}
+		if safe {
+			safeCount++
+		}
+	}
+	return safeCount
 }
